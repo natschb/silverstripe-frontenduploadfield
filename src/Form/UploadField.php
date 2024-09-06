@@ -24,43 +24,43 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
         'upload',
 		'remove'
     ];
-    
+
     public static $allowedMaxFileSize;
 
     /**
      * Set the timeout (in milliseconds) allowed by dropzone
      * (defaults to Dropzone default of 30 seconds).
-     * 
+     *
      * @var int
      */
     protected $timeout = 30000;
-	
+
 	/**
      * Helper to set image thumbnail types allowed by dropzone.
 	 * This is different to allowed upload file types set by e.g. $upload->getValidator()->setAllowedExtensions(array('pdf','jpg','jpeg','gif'));
 	 * string seperated by '|' e.g. jpg|jpeg|gif|png.
-     * 
+     *
      * @var string
      */
     protected $thumbnailTypes = 'jpg|jpeg|gif|png';
-    
+
      /**
      * Set thumbnail size for image preview
      *
-     * return @array 
+     * return @array
      */
     protected $thumbsizes = ["width" => 134, "height" => 134];
-    
+
 	 /**
      * Set custom url path for uploading
      *
      * return string
      */
     protected $customUploadUrl = null;
-    
+
     /**
      * Set the ability to remove uploaded files.
-     * 
+     *
      * @var bool
      */
     protected $removeFiles = false;
@@ -68,12 +68,12 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
     public function __construct($name, $title = null, SS_List $items = null)
     {
         parent::__construct($name, $title, $items);
-    
+
         $this->setAttribute('data-schema', '');
         $this->setAttribute('data-state', '');
         $this->setAttribute('name', $name);
     }
-    
+
     /**
      * @param array $properties
      * @return string
@@ -84,30 +84,30 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
         Requirements::javascript('https://unpkg.com/dropzone@5/dist/min/dropzone.min.js');
         Requirements::css('https://unpkg.com/dropzone@5/dist/min/dropzone.min.css');
         Requirements::css('jamesbolitho/silverstripe-frontenduploadfield: resources/css/custom.css');
-    
+
         //Check to see if data exists for this field in relation to uploaded files...
         //$data = Controller::curr()->getRequest()->getSession()->get("FormData.{$this->getForm()->Name}.data");
-        
+
 		$thumbsize = $this->getThumbSize();
 		$files = "''";
-		
+
         if($this->getItemIDs())
 		{
 			$files = $this->uploadedFiles($this->getItemIDs());
 	  	}
-		
+
 		//Check if Custom Upload URL is set to ensure that the correct upload and remove paths are set...
         if($this->getCustomUploadUrl())
         {
             $uploadURL = $this->getCustomUploadUrl("upload");
             $removeFileURL = $this->getCustomUploadUrl("remove");
-        } 
+        }
         else
         {
             $uploadURL = $this->Link("upload");
             $removeFileURL = $this->Link("remove");
         }
-        
+
        Requirements::customScript("
         (function($) {
 			Dropzone.autoDiscover = false;
@@ -213,7 +213,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
             
             function removeFile(file, dropzoneObject){
                 // Create the remove button
-                var removeButton = Dropzone.createElement('<button class=\"btn btn-primary btn-remove\">Remove</button>');
+                var removeButton = Dropzone.createElement('<button class=\"btn btn-primary btn-remove\">Entfernen</button>');
                 var _this = dropzoneObject;
 
                 // Listen to the click event
@@ -246,7 +246,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
 		");
         return $field;
     }
-	
+
     public function Type()
     {
         return "frontenduploadfield uploadfield";
@@ -284,12 +284,12 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
 
 		$uploadedFileObject = AssetAdmin::singleton()->getObjectFromData($file);
         $uploadedFileObject['frontenduploadkey'] = $file->FrontEndUploadKey;
-        
+
         // Return success response
         $result = [
 			$uploadedFileObject
         ];
-		
+
         // Don't discard pre-generated client side canvas thumbnail
         if ($result[0]['category'] === 'image') {
             unset($result[0]['thumbnail']);
@@ -298,8 +298,8 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
         return (new HTTPResponse(json_encode($result)))
             ->addHeader('Content-Type', 'application/json');
     }
-	
-	/* If files have already been uploaded we need to specify which files have been uploaded to ensure that people can not upload more than they are supposed to if limits are set */ 
+
+	/* If files have already been uploaded we need to specify which files have been uploaded to ensure that people can not upload more than they are supposed to if limits are set */
 	public function uploadedFiles($ids = []){
 		if(empty($ids)) return false;
 		$files = [];
@@ -312,7 +312,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
 		}
 		return json_encode($files);
 	}
-    
+
     /*
     * Allow ability to remove uploaded files
     */
@@ -321,14 +321,14 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
         if ($this->isDisabled() || $this->isReadonly()) {
             return $this->httpError(403);
         }
-        
+
         // CSRF check
         $token = $this->getForm()->getSecurityToken();
-        
+
         if (!$token->checkRequest($request)) {
             return $this->httpError(400);
         }
-        
+
         if($id = $request->postVar('ID'))
         {
             $file = File::get()->filter(['FrontEndUploadKey' => $id])->First();
@@ -337,7 +337,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
                 $file->deleteFromStage('Live');
                 $file->deleteFromStage('Stage');
                 $file->deleteFile();
-                
+
                 $result = [
                     'Success' => 'File Deleted'
                 ];
@@ -353,14 +353,14 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
 			}
         }
     }
-    
+
     public function getAttributes()
     {
         $attributes = parent::getAttributes();
         unset($attributes['type']);
         return $attributes;
     }
-    
+
     /**
      * Sets the custom upload url if forms url is manipulated by javascript for example...
      * @param $customUploadUrl
@@ -372,7 +372,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
         if($segment) $link .= '/' . $segment;
         return $link;
     }
-    
+
      /**
      * Sets the custom upload url if forms url is manipulated by javascript for example...
      * @param $count
@@ -381,10 +381,10 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
     public function setCustomUploadUrl($url)
     {
 		$this->customUploadUrl = $url;
-        
+
         return $this;
-    } 
-	
+    }
+
 	/**
      * Sets the file size allowed for this field
      * @param $count
@@ -398,7 +398,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
 			return $sizeMB;
 		}
     }
-	
+
 	/**
      * Returns a list of file extensions (and corresponding mime types) that will be accepted
      *
@@ -422,12 +422,12 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
 		}
 		return $extentionString;
     }
-    
+
     /**
      * Get the timeout allowed by dropzone (defaults to null/Dropzone default)
      *
      * @return int|null
-     */ 
+     */
     public function getTimeout()
     {
         return $this->timeout;
@@ -439,13 +439,13 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
      * @param int $timout Set the timeout in milliseconds
      *
      * @return self
-     */ 
+     */
     public function setTimeout(int $timeout)
     {
         $this->timeout = $timeout;
         return $this;
     }
-    
+
 	 /**
      * Get the thumbnailTypes allowed by dropzone
      *
@@ -455,14 +455,14 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
 	{
 		return $this->thumbnailTypes;
 	}
-	
+
 	/**
      * Set the image thumbnail types allowed by dropzone
      *
      * @param string $thumbnailTypes set image extensions e.g. "jpg|jpeg|gif|png"
      *
      * @return self
-     */ 
+     */
 	public function setThumbnailTypes()
 	{
 		$this->thumbnailTypes = $thumbnailTypes;
@@ -475,23 +475,23 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
      * @param array width and height
      *
      * @return self
-     */ 
+     */
     public function getThumbSize()
     {
         return $this->thumbsizes;
     }
-    
+
     public function setThumbSize(array $dimensions)
     {
         $this->thumbsizes = $dimensions;
         return $this;
     }
-    
+
     /**
      * Get whether able to remove files from the upload field
      *
      * @return true | false
-     */ 
+     */
     public function getRemoveFiles()
     {
         return $this->removeFiles;
@@ -503,7 +503,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
      * @param true | false
      *
      * @return self
-     */ 
+     */
     public function setRemoveFiles(bool $allowRemoveFiles)
     {
         $this->removeFiles = $allowRemoveFiles;
