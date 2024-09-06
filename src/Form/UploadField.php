@@ -213,7 +213,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
             
             function removeFile(file, dropzoneObject){
                 // Create the remove button
-                var removeButton = Dropzone.createElement('<button class=\"btn btn-primary btn-remove\">Entfernen</button>');
+                var removeButton = Dropzone.createElement('<button class=\"btn btn-primary btn-remove\">Remove</button>');
                 var _this = dropzoneObject;
 
                 // Listen to the click event
@@ -345,12 +345,20 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
                 return (new HTTPResponse(json_encode($result)))
             ->addHeader('Content-Type', 'application/json');
             } else {
-				$result = [
-                    'Error' => 'File not removed!'
+        				$result = [
+                  'Error' => 'File not removed!'
                 ];
-				return (new HTTPResponse(json_encode($result)))
+				        return (new HTTPResponse(json_encode($result)))
+                  ->addHeader('Content-Type', 'application/json');
+            }
+        } else {
+
+          $result = [
+            'Success' => 'File Deleted'
+          ];
+          return (new HTTPResponse(json_encode($result)))
             ->addHeader('Content-Type', 'application/json');
-			}
+
         }
     }
 
