@@ -20,95 +20,95 @@ use SilverStripe\ORM\SS_List;
 
 class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
 {
-    private static $allowed_actions = [
-        'upload',
-		'remove'
-    ];
+  private static $allowed_actions = [
+    'upload',
+    'remove'
+  ];
 
-    public static $allowedMaxFileSize;
+  public static $allowedMaxFileSize;
 
-    /**
-     * Set the timeout (in milliseconds) allowed by dropzone
-     * (defaults to Dropzone default of 30 seconds).
-     *
-     * @var int
-     */
-    protected $timeout = 30000;
+  /**
+   * Set the timeout (in milliseconds) allowed by dropzone
+   * (defaults to Dropzone default of 30 seconds).
+   *
+   * @var int
+   */
+  protected $timeout = 30000;
 
-	/**
-     * Helper to set image thumbnail types allowed by dropzone.
-	 * This is different to allowed upload file types set by e.g. $upload->getValidator()->setAllowedExtensions(array('pdf','jpg','jpeg','gif'));
-	 * string seperated by '|' e.g. jpg|jpeg|gif|png.
-     *
-     * @var string
-     */
-    protected $thumbnailTypes = 'jpg|jpeg|gif|png';
+  /**
+   * Helper to set image thumbnail types allowed by dropzone.
+   * This is different to allowed upload file types set by e.g. $upload->getValidator()->setAllowedExtensions(array('pdf','jpg','jpeg','gif'));
+   * string seperated by '|' e.g. jpg|jpeg|gif|png.
+   *
+   * @var string
+   */
+  protected $thumbnailTypes = 'jpg|jpeg|gif|png';
 
-     /**
-     * Set thumbnail size for image preview
-     *
-     * return @array
-     */
-    protected $thumbsizes = ["width" => 134, "height" => 134];
+  /**
+   * Set thumbnail size for image preview
+   *
+   * return @array
+   */
+  protected $thumbsizes = ["width" => 134, "height" => 134];
 
-	 /**
-     * Set custom url path for uploading
-     *
-     * return string
-     */
-    protected $customUploadUrl = null;
+  /**
+   * Set custom url path for uploading
+   *
+   * return string
+   */
+  protected $customUploadUrl = null;
 
-    /**
-     * Set the ability to remove uploaded files.
-     *
-     * @var bool
-     */
-    protected $removeFiles = false;
+  /**
+   * Set the ability to remove uploaded files.
+   *
+   * @var bool
+   */
+  protected $removeFiles = false;
 
-    public function __construct($name, $title = null, SS_List $items = null)
+  public function __construct($name, $title = null, SS_List $items = null)
+  {
+    parent::__construct($name, $title, $items);
+
+    $this->setAttribute('data-schema', '');
+    $this->setAttribute('data-state', '');
+    $this->setAttribute('name', $name);
+  }
+
+  /**
+   * @param array $properties
+   * @return string
+   */
+  public function Field($properties = array())
+  {
+    $field = parent::Field($properties);
+    Requirements::javascript('jamesbolitho/silverstripe-frontenduploadfield: client/js/dropzone.min.js');
+    Requirements::css('jamesbolitho/silverstripe-frontenduploadfield: client/css/dropzone.min.css');
+    Requirements::css('jamesbolitho/silverstripe-frontenduploadfield: resources/css/custom.css');
+
+    //Check to see if data exists for this field in relation to uploaded files...
+    //$data = Controller::curr()->getRequest()->getSession()->get("FormData.{$this->getForm()->Name}.data");
+
+    $thumbsize = $this->getThumbSize();
+    $files = "''";
+
+    if($this->getItemIDs())
     {
-        parent::__construct($name, $title, $items);
-
-        $this->setAttribute('data-schema', '');
-        $this->setAttribute('data-state', '');
-        $this->setAttribute('name', $name);
+      $files = $this->uploadedFiles($this->getItemIDs());
     }
 
-    /**
-     * @param array $properties
-     * @return string
-     */
-    public function Field($properties = array())
+    //Check if Custom Upload URL is set to ensure that the correct upload and remove paths are set...
+    if($this->getCustomUploadUrl())
     {
-        $field = parent::Field($properties);
-        Requirements::javascript('https://unpkg.com/dropzone@5/dist/min/dropzone.min.js');
-        Requirements::css('https://unpkg.com/dropzone@5/dist/min/dropzone.min.css');
-        Requirements::css('jamesbolitho/silverstripe-frontenduploadfield: resources/css/custom.css');
+      $uploadURL = $this->getCustomUploadUrl("upload");
+      $removeFileURL = $this->getCustomUploadUrl("remove");
+    }
+    else
+    {
+      $uploadURL = $this->Link("upload");
+      $removeFileURL = $this->Link("remove");
+    }
 
-        //Check to see if data exists for this field in relation to uploaded files...
-        //$data = Controller::curr()->getRequest()->getSession()->get("FormData.{$this->getForm()->Name}.data");
-
-		$thumbsize = $this->getThumbSize();
-		$files = "''";
-
-        if($this->getItemIDs())
-		{
-			$files = $this->uploadedFiles($this->getItemIDs());
-	  	}
-
-		//Check if Custom Upload URL is set to ensure that the correct upload and remove paths are set...
-        if($this->getCustomUploadUrl())
-        {
-            $uploadURL = $this->getCustomUploadUrl("upload");
-            $removeFileURL = $this->getCustomUploadUrl("remove");
-        }
-        else
-        {
-            $uploadURL = $this->Link("upload");
-            $removeFileURL = $this->Link("remove");
-        }
-
-       Requirements::customScript("
+    Requirements::customScript("
         (function($) {
 			Dropzone.autoDiscover = false;
 			var name = '" . $this->name . "';
@@ -213,7 +213,7 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
             
             function removeFile(file, dropzoneObject){
                 // Create the remove button
-                var removeButton = Dropzone.createElement('<button class=\"btn btn-primary btn-remove\">Remove</button>');
+                var removeButton = Dropzone.createElement('<button class=\"btn btn-primary btn-remove\">Entfernen</button>');
                 var _this = dropzoneObject;
 
                 // Listen to the click event
@@ -244,277 +244,269 @@ class UploadField extends \SilverStripe\AssetAdmin\Forms\UploadField
             
         }(jQuery));
 		");
-        return $field;
+    return $field;
+  }
+
+  public function Type()
+  {
+    return "frontenduploadfield uploadfield";
+  }
+
+  public function upload(HTTPRequest $request)
+  {
+    if ($this->isDisabled() || $this->isReadonly()) {
+      return $this->httpError(403);
     }
 
-    public function Type()
-    {
-        return "frontenduploadfield uploadfield";
+    // CSRF check
+    $token = $this->getForm()->getSecurityToken();
+    if (!$token->checkRequest($request)) {
+      return $this->httpError(400);
     }
 
-    public function upload(HTTPRequest $request)
+    $tmpFile = $request->postVar('file');
+    /** @var File $file */
+    $file = $this->saveTemporaryFile($tmpFile, $error);
+
+    // Prepare result
+    if ($error) {
+      $result = [
+        'error' => $error,
+      ];
+      $this->getUpload()->clearErrors();
+      return (new HTTPResponse(json_encode($result), 400))
+        ->addHeader('Content-Type', 'application/json');
+    }
+
+    //Create an identification key for files uploaded from front end to use in remove function later if required...
+    //Publish file to ensure it is accessible on front end...
+    $file->generateFrontEndUploadKey();
+
+    $uploadedFileObject = AssetAdmin::singleton()->getObjectFromData($file);
+    $uploadedFileObject['frontenduploadkey'] = $file->FrontEndUploadKey;
+
+    // Return success response
+    $result = [
+      $uploadedFileObject
+    ];
+
+    // Don't discard pre-generated client side canvas thumbnail
+    if ($result[0]['category'] === 'image') {
+      unset($result[0]['thumbnail']);
+    }
+    $this->getUpload()->clearErrors();
+    return (new HTTPResponse(json_encode($result)))
+      ->addHeader('Content-Type', 'application/json');
+  }
+
+  /* If files have already been uploaded we need to specify which files have been uploaded to ensure that people can not upload more than they are supposed to if limits are set */
+  public function uploadedFiles($ids = []){
+    if(empty($ids)) return false;
+    $files = [];
+    foreach($ids as $id) {
+      if($file = File::get()->byID((int) $id)) {
+        $size = $file->ini2bytes($file->getSize());
+        $ext = File::get_file_extension($file->Filename);
+        $files[] = ["ID" => $file->ID, "Name" => $file->Name, 'dataURL' => $file->getAbsoluteURL(), 'Size' => $size, 'Type' => $ext, 'FrontEndUploadKey' => $file->FrontEndUploadKey];
+      }
+    }
+    return json_encode($files);
+  }
+
+  /*
+  * Allow ability to remove uploaded files
+  */
+  public function remove(HTTPRequest $request)
+  {
+    if ($this->isDisabled() || $this->isReadonly()) {
+      return $this->httpError(403);
+    }
+
+    // CSRF check
+    $token = $this->getForm()->getSecurityToken();
+
+    if (!$token->checkRequest($request)) {
+      return $this->httpError(400);
+    }
+
+    if($id = $request->postVar('ID'))
     {
-        if ($this->isDisabled() || $this->isReadonly()) {
-            return $this->httpError(403);
-        }
+      $file = File::get()->filter(['FrontEndUploadKey' => $id])->First();
+      if($file)
+      {
+        $file->deleteFromStage('Live');
+        $file->deleteFromStage('Stage');
+        $file->deleteFile();
 
-        // CSRF check
-        $token = $this->getForm()->getSecurityToken();
-        if (!$token->checkRequest($request)) {
-            return $this->httpError(400);
-        }
-
-        $tmpFile = $request->postVar('file');
-        /** @var File $file */
-        $file = $this->saveTemporaryFile($tmpFile, $error);
-
-        // Prepare result
-        if ($error) {
-            $result = [
-                'error' => $error,
-            ];
-            $this->getUpload()->clearErrors();
-            return (new HTTPResponse(json_encode($result), 400))
-                ->addHeader('Content-Type', 'application/json');
-        }
-
-		//Create an identification key for files uploaded from front end to use in remove function later if required...
-        //Publish file to ensure it is accessible on front end...
-        $file->generateFrontEndUploadKey();
-
-		$uploadedFileObject = AssetAdmin::singleton()->getObjectFromData($file);
-        $uploadedFileObject['frontenduploadkey'] = $file->FrontEndUploadKey;
-
-        // Return success response
         $result = [
-			$uploadedFileObject
+          'Success' => 'File Deleted'
         ];
 
-        // Don't discard pre-generated client side canvas thumbnail
-        if ($result[0]['category'] === 'image') {
-            unset($result[0]['thumbnail']);
-        }
-        $this->getUpload()->clearErrors();
         return (new HTTPResponse(json_encode($result)))
-            ->addHeader('Content-Type', 'application/json');
+          ->addHeader('Content-Type', 'application/json');
+      } else {
+        $result = [
+          'Error' => 'File not removed!'
+        ];
+        return (new HTTPResponse(json_encode($result)))
+          ->addHeader('Content-Type', 'application/json');
+      }
     }
+  }
 
-	/* If files have already been uploaded we need to specify which files have been uploaded to ensure that people can not upload more than they are supposed to if limits are set */
-	public function uploadedFiles($ids = []){
-		if(empty($ids)) return false;
-		$files = [];
-		foreach($ids as $id) {
-			if($file = File::get()->byID((int) $id)) {
-				$size = $file->ini2bytes($file->getSize());
-                $ext = File::get_file_extension($file->Filename);
-				$files[] = ["ID" => $file->ID, "Name" => $file->Name, 'dataURL' => $file->getAbsoluteURL(), 'Size' => $size, 'Type' => $ext, 'FrontEndUploadKey' => $file->FrontEndUploadKey];
-			}
-		}
-		return json_encode($files);
-	}
+  public function getAttributes()
+  {
+    $attributes = parent::getAttributes();
+    unset($attributes['type']);
+    return $attributes;
+  }
 
-    /*
-    * Allow ability to remove uploaded files
-    */
-    public function remove(HTTPRequest $request)
-    {
-        if ($this->isDisabled() || $this->isReadonly()) {
-            return $this->httpError(403);
-        }
+  /**
+   * Sets the custom upload url if forms url is manipulated by javascript for example...
+   * @param $customUploadUrl
+   * @return null | $this
+   */
+  public function getCustomUploadUrl($segment = null)
+  {
+    $link = $this->customUploadUrl;
+    if($segment) $link .= '/' . $segment;
+    return $link;
+  }
 
-        // CSRF check
-        $token = $this->getForm()->getSecurityToken();
+  /**
+   * Sets the custom upload url if forms url is manipulated by javascript for example...
+   * @param $count
+   * @return $this
+   */
+  public function setCustomUploadUrl($url)
+  {
+    $this->customUploadUrl = $url;
 
-        if (!$token->checkRequest($request)) {
-            return $this->httpError(400);
-        }
+    return $this;
+  }
 
-        if($id = $request->postVar('ID'))
-        {
-            $file = File::get()->filter(['FrontEndUploadKey' => $id])->First();
-            if($file)
-            {
-                $file->deleteFromStage('Live');
-                $file->deleteFromStage('Stage');
-                $file->deleteFile();
-
-                $result = [
-                    'Success' => 'File Deleted'
-                ];
-
-                return (new HTTPResponse(json_encode($result)))
-            ->addHeader('Content-Type', 'application/json');
-            } else {
-        				$result = [
-                  'Error' => 'File not removed!'
-                ];
-				        return (new HTTPResponse(json_encode($result)))
-                  ->addHeader('Content-Type', 'application/json');
-            }
-        } else {
-
-          $result = [
-            'Success' => 'File Deleted'
-          ];
-          return (new HTTPResponse(json_encode($result)))
-            ->addHeader('Content-Type', 'application/json');
-
-        }
+  /**
+   * Sets the file size allowed for this field
+   * @param $count
+   * @return $this
+   */
+  public function getAllowedMaxFileSize()
+  {
+    $size = $this->getValidator()->getAllowedMaxFileSize();
+    if($size){
+      $sizeMB = $size / 1024 / 1024;
+      return $sizeMB;
     }
+  }
 
-    public function getAttributes()
-    {
-        $attributes = parent::getAttributes();
-        unset($attributes['type']);
-        return $attributes;
+  /**
+   * Returns a list of file extensions (and corresponding mime types) that will be accepted
+   *
+   * @return array
+   */
+  protected function getAcceptFileTypes()
+  {
+    $extensions = $this->getValidator()->getAllowedExtensions();
+    if (!$extensions) {
+      return [];
     }
-
-    /**
-     * Sets the custom upload url if forms url is manipulated by javascript for example...
-     * @param $customUploadUrl
-     * @return null | $this
-     */
-    public function getCustomUploadUrl($segment = null)
-    {
-		$link = $this->customUploadUrl;
-        if($segment) $link .= '/' . $segment;
-        return $link;
+    $extentionString = "";
+    $i = 0;
+    foreach ($extensions as $extension) {
+      if ($i == 0){
+        $extentionString .= ".{$extension}";
+      } else {
+        $extentionString .= ", .{$extension}";
+      }
+      $i++;
     }
+    return $extentionString;
+  }
 
-     /**
-     * Sets the custom upload url if forms url is manipulated by javascript for example...
-     * @param $count
-     * @return $this
-     */
-    public function setCustomUploadUrl($url)
-    {
-		$this->customUploadUrl = $url;
+  /**
+   * Get the timeout allowed by dropzone (defaults to null/Dropzone default)
+   *
+   * @return int|null
+   */
+  public function getTimeout()
+  {
+    return $this->timeout;
+  }
 
-        return $this;
-    }
+  /**
+   * Set the timeout allowed by dropzone (defaults to null/Dropzone default)
+   *
+   * @param int $timout Set the timeout in milliseconds
+   *
+   * @return self
+   */
+  public function setTimeout(int $timeout)
+  {
+    $this->timeout = $timeout;
+    return $this;
+  }
 
-	/**
-     * Sets the file size allowed for this field
-     * @param $count
-     * @return $this
-     */
-    public function getAllowedMaxFileSize()
-    {
-		$size = $this->getValidator()->getAllowedMaxFileSize();
-		if($size){
-			$sizeMB = $size / 1024 / 1024;
-			return $sizeMB;
-		}
-    }
+  /**
+   * Get the thumbnailTypes allowed by dropzone
+   *
+   * @return string
+   */
+  public function getThumbnailTypes()
+  {
+    return $this->thumbnailTypes;
+  }
 
-	/**
-     * Returns a list of file extensions (and corresponding mime types) that will be accepted
-     *
-     * @return array
-     */
-    protected function getAcceptFileTypes()
-    {
-        $extensions = $this->getValidator()->getAllowedExtensions();
-        if (!$extensions) {
-            return [];
-        }
-		$extentionString = "";
-		$i = 0;
-		foreach ($extensions as $extension) {
-			if ($i == 0){
-				$extentionString .= ".{$extension}";
-			} else {
-				$extentionString .= ", .{$extension}";
-			}
-			$i++;
-		}
-		return $extentionString;
-    }
+  /**
+   * Set the image thumbnail types allowed by dropzone
+   *
+   * @param string $thumbnailTypes set image extensions e.g. "jpg|jpeg|gif|png"
+   *
+   * @return self
+   */
+  public function setThumbnailTypes()
+  {
+    $this->thumbnailTypes = $thumbnailTypes;
+    return $this;
+  }
 
-    /**
-     * Get the timeout allowed by dropzone (defaults to null/Dropzone default)
-     *
-     * @return int|null
-     */
-    public function getTimeout()
-    {
-        return $this->timeout;
-    }
+  /**
+   * Get the thumbnail dimensions for the thumbnail preview
+   *
+   * @param array width and height
+   *
+   * @return self
+   */
+  public function getThumbSize()
+  {
+    return $this->thumbsizes;
+  }
 
-    /**
-     * Set the timeout allowed by dropzone (defaults to null/Dropzone default)
-     *
-     * @param int $timout Set the timeout in milliseconds
-     *
-     * @return self
-     */
-    public function setTimeout(int $timeout)
-    {
-        $this->timeout = $timeout;
-        return $this;
-    }
+  public function setThumbSize(array $dimensions)
+  {
+    $this->thumbsizes = $dimensions;
+    return $this;
+  }
 
-	 /**
-     * Get the thumbnailTypes allowed by dropzone
-     *
-     * @return string
-     */
-	public function getThumbnailTypes()
-	{
-		return $this->thumbnailTypes;
-	}
+  /**
+   * Get whether able to remove files from the upload field
+   *
+   * @return true | false
+   */
+  public function getRemoveFiles()
+  {
+    return $this->removeFiles;
+  }
 
-	/**
-     * Set the image thumbnail types allowed by dropzone
-     *
-     * @param string $thumbnailTypes set image extensions e.g. "jpg|jpeg|gif|png"
-     *
-     * @return self
-     */
-	public function setThumbnailTypes()
-	{
-		$this->thumbnailTypes = $thumbnailTypes;
-		return $this;
-	}
-
-    /**
-     * Get the thumbnail dimensions for the thumbnail preview
-     *
-     * @param array width and height
-     *
-     * @return self
-     */
-    public function getThumbSize()
-    {
-        return $this->thumbsizes;
-    }
-
-    public function setThumbSize(array $dimensions)
-    {
-        $this->thumbsizes = $dimensions;
-        return $this;
-    }
-
-    /**
-     * Get whether able to remove files from the upload field
-     *
-     * @return true | false
-     */
-    public function getRemoveFiles()
-    {
-        return $this->removeFiles;
-    }
-
-    /**
-     * Set whether able to remove files from the upload field
-     *
-     * @param true | false
-     *
-     * @return self
-     */
-    public function setRemoveFiles(bool $allowRemoveFiles)
-    {
-        $this->removeFiles = $allowRemoveFiles;
-        return $this;
-    }
+  /**
+   * Set whether able to remove files from the upload field
+   *
+   * @param true | false
+   *
+   * @return self
+   */
+  public function setRemoveFiles(bool $allowRemoveFiles)
+  {
+    $this->removeFiles = $allowRemoveFiles;
+    return $this;
+  }
 }

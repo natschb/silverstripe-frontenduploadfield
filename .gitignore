@@ -4,3 +4,5 @@
 _notes/
 /bower_components/
 /node_modules/
+# macOS Finder metadata
+**/.DS_Store

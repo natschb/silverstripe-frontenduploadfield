@@ -11,12 +11,19 @@
 	"extra": {
 		"expose": [
 			"resources/css",
-			"resources/images"
+			"client",
+			"js"
 		]
 	},
 	"autoload": {
 		"psr-4": {
 			"jamesbolitho\\frontenduploadfield\\": "src/"
+		}
+	},
+	"config": {
+		"allow-plugins": {
+			"composer/installers": true,
+			"silverstripe/vendor-plugin": true
 		}
 	}
 }
